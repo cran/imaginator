@@ -1,22 +1,24 @@
 Package: imaginator
 Title: Simulate General Insurance Policies and Losses
-Version: 0.1.1
-Authors@R: person("Brian", "Fannin", email = "FanninQED@Yahoo.com", role = c("aut", "cre"))
-Description: Simulate general insurance policies, losses and loss emergence. The package contemplates 
+Version: 1.0.0
+Authors@R: person("Brian", "Fannin", email = "bfannin@casact.org", role = c("aut", "cre"))
+Maintainer: Brian Fannin <bfannin@casact.org>
+Description: Simulate general insurance policies, losses and loss emergence. The functions contemplate 
   deterministic and stochastic policy retention and growth scenarios. Retention and growth rates are percentages relative
   to the expiring portfolio. Claims are simulated for each policy. This is accomplished either be assuming a frequency
   distribution per development lag or by generating random wait times until claim emergence and settlement. Loss simulation 
   uses standard loss distributions for claim amounts.
-License: GPL-3
+License: MPL-2.0 | file LICENSE
 Depends: R (>= 3.2.3)
-LazyData: true
-Imports: dplyr, magrittr, assertthat, lubridate, stringi
+Imports: assertthat, checkmate, distributions3, dplyr, lubridate,
+        magrittr, rlang, stringi, tibble
 Suggests: testthat, knitr, rmarkdown, ggplot2
 VignetteBuilder: knitr
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.2
+Encoding: UTF-8
+URL: https://github.com/casact/imaginator
 NeedsCompilation: no
-Packaged: 2017-06-05 18:13:02 UTC; brian
+Packaged: 2022-01-25 19:23:21 UTC; bfannin
 Author: Brian Fannin [aut, cre]
-Maintainer: Brian Fannin <FanninQED@Yahoo.com>
 Repository: CRAN
-Date/Publication: 2017-06-05 23:41:53 UTC
+Date/Publication: 2022-01-27 08:40:02 UTC

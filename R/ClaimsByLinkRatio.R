@@ -1,11 +1,16 @@
+# This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+# If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 #' @title Claims by link ratio
 #'
 #' @description
 #' Given a data frame of claims, this will simulate claim development by applying a (possibly) random link ratio.
 #'
-#' @param dfClaims A claims data frame
-#' @param Links A list of functions which dictate how severities change from one evaluation date to the next
-#' @param Lags A vector of lags
+#' @param tbl_claims A claims data frame
+#' @param links A vector of the same length as `lags` of factors, or their
+#'   distributions, determining how severities change from one evaluation date
+#'   to the next.
+#' @param lags A vector of lags
 #'
 #' @details
 #' This function will apply the link ratio algorithm at an individual claim level.
@@ -17,33 +22,33 @@
 #'
 #' @examples
 #'
-#' dfPolicy <- NewPolicyYear(10, 2001)
-#' dfClaims <- ClaimsByFirstReport(
-#'                dfPolicy
-#'              , Frequency = FixedHelper(10)
-#'              , PaymentSeverity = FixedHelper(100)
-#'              , Lags = 1)
-#' dfClaims <- ClaimsByLinkRatio(dfClaims
-#'                               , Links = FixedHelper(c(1.25, 1.1, 1.05))
-#'                               , Lags = 1:4)
+#' tbl_policy <- policy_year_new(10, 2001)
+#' tbl_claims <- claims_by_first_report(
+#'                tbl_policy,
+#'                frequency = 10,
+#'                payment_severity = 100,
+#'                lags = 1)
+#' tbl_claims <- claims_by_link_ratio(
+#'                tbl_claims,
+#'                links = c(1.25, 1.1, 1.05),
+#'                lags = 1:4)
 #'
 #' @export
-ClaimsByLinkRatio <- function(dfClaims, Links, Lags){
+claims_by_link_ratio <- function(tbl_claims, links, lags){
 
-  numLinks <- length(Links)
-  if (numLinks == 1) Links <- PutFunctionInList(Links)
+  links <- maybe_wrap_in_list(links)
+  for (iLink in seq.int(length(links))) {
 
-  for (iLink in seq.int(length(Links))){
+    tbl_next_lag <- tbl_claims[tbl_claims$lag == lags[iLink], ]
 
-    dfNextLag <- dfClaims[dfClaims$Lag == Lags[iLink], ]
+    # samplingx
+    links <- sample_or_rep(links[[iLink]], nrow(tbl_next_lag))
 
-    links <- Links[[iLink]](nrow(dfNextLag))
+    tbl_next_lag$payment_amount <- tbl_next_lag$payment_amount * links
+    tbl_next_lag$lag <- lags[iLink + 1]
 
-    dfNextLag$PaymentAmount <- dfNextLag$PaymentAmount * links
-    dfNextLag$Lag <- Lags[iLink + 1]
-
-    dfClaims <- rbind(dfClaims, dfNextLag)
+    tbl_claims <- rbind(tbl_claims, tbl_next_lag)
   }
 
-  dfClaims
+  tbl_claims
 }

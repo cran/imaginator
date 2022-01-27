@@ -1,133 +1,134 @@
-## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(echo = TRUE, results='asis')
+## ----setup, include=FALSE-----------------------------------------------------
+knitr::opts_chunk$set(echo = TRUE, results = 'asis')
 library(dplyr)
 library(knitr)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 library(imaginator)
 set.seed(12345)
-dfPolicy <- SimulatePolicies(2, 2001:2005)
+tbl_policy <- policies_simulate(2, 2001:2005)
 
-dfPolicy %>% 
-  head(5) %>% 
+## -----------------------------------------------------------------------------
+tbl_claim_transaction <- claims_by_wait_time(
+  tbl_policy,
+  claim_frequency = 2,
+  payment_frequency = 3,
+  occurrence_wait = 10,
+  report_wait = 5,
+  pay_wait = 5,
+  pay_severity = 50)
+
+## ----echo = FALSE-------------------------------------------------------------
+tbl_claim_transaction %>% 
+  filter(policyholder_id == 1, lubridate::year(policy_effective_date) == 2001) %>% 
+  select(claim_id, occurrence_date, report_date, payment_date, payment_amount) %>% 
   kable()
 
-## ------------------------------------------------------------------------
-dfClaimTransactions <- ClaimsByWaitTime(
-    dfPolicy
-  , ClaimFrequency = FixedHelper(2)
-  , PaymentFrequency = FixedHelper(3)
-  , OccurrenceWait = FixedHelper(10)
-  , ReportWait = FixedHelper(5)
-  , PayWait = FixedHelper(5)
-  , PaySeverity = FixedHelper(50))
+## ---- message = FALSE---------------------------------------------------------
+library(distributions3)
+tbl_claim_transaction <- claims_by_wait_time(
+  tbl_policy,
+  claim_frequency = 2,
+  payment_frequency = Poisson(2),
+  occurrence_wait = Poisson(10),
+  report_wait = Poisson(5),
+  pay_wait = Poisson(5),
+  pay_severity = LogNormal(log(50), 0.5 * log(50)))
 
-## ------------------------------------------------------------------------
-dfClaimTransactions %>% 
-  filter(PolicyholderID == 1, lubridate::year(PolicyEffectiveDate) == 2001) %>% 
-  select(ClaimID, OccurrenceDate, ReportDate, PaymentDate, PaymentAmount) %>% 
+## ----echo=FALSE---------------------------------------------------------------
+tbl_claim_transaction %>% 
+  filter(policyholder_id == 1, lubridate::year(policy_effective_date) == 2001) %>% 
+  select(claim_id, occurrence_date, report_date, payment_date, payment_amount) %>% 
   kable()
 
-## ------------------------------------------------------------------------
-dfClaimTransactions <- ClaimsByWaitTime(
-    dfPolicy
-  , ClaimFrequency = FixedHelper(2)
-  , PaymentFrequency = PoissonHelper(2)
-  , OccurrenceWait = PoissonHelper(10)
-  , ReportWait = PoissonHelper(5)
-  , PayWait = PoissonHelper(5)
-  , PaySeverity = LognormalHelper(log(50), 0.5*log(50)))
-
-## ----echo=FALSE----------------------------------------------------------
-dfClaimTransactions %>% 
-  filter(PolicyholderID == 1, lubridate::year(PolicyEffectiveDate) == 2001) %>% 
-  select(ClaimID, OccurrenceDate, ReportDate, PaymentDate, PaymentAmount) %>% 
-  kable()
-
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 set.seed(12345)
-dfPolicy <- SimulatePolicies(2, 2001:2005)
+tbl_policy <- policies_simulate(2, 2001:2005)
 
 lstFreq <- list(
-    FixedHelper(4)
-  , FixedHelper(3)
-  , FixedHelper(2)
-  , FixedHelper(1)
+    4
+  , 3
+  , 2
+  , 1
 )
 
 lstSev <- list(
-  FixedHelper(250)
+  250
 )
 lstSev[1:4] <- lstSev[1]
 
-dfIBNYR_Fixed <- ClaimsByFirstReport(
-    dfPolicy
-  , Frequency = lstFreq
-  , PaymentSeverity = lstSev
-  , Lags = 1:4)
+tbl_ibnyr_fixed <- claims_by_first_report(
+    tbl_policy
+  , frequency = lstFreq
+  , payment_severity = lstSev
+  , lags = 1:4)
 
-## ------------------------------------------------------------------------
-dfIBNYR_Fixed %>% 
-  filter(PolicyholderID == 1) %>% 
-  filter(PolicyEffectiveDate == min(PolicyEffectiveDate)) %>% 
+## -----------------------------------------------------------------------------
+tbl_ibnyr_fixed %>% 
+  filter(policyholder_id == 1) %>% 
+  filter(policy_effective_date == min(policy_effective_date)) %>% 
   kable()
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 lstFreq <- list(
-    PoissonHelper(4)
-  , PoissonHelper(3)
-  , PoissonHelper(2)
-  , PoissonHelper(1)
+    Poisson(4)
+  , Poisson(3)
+  , Poisson(2)
+  , Poisson(1)
 )
 
 lstSev <- list(
-  LognormalHelper(meanlog = log(10000), sdlog = .5*log(10000))
+  LogNormal(log_mu = log(10000), log_sigma = .5*log(10000))
 )
 lstSev[1:4] <- lstSev[1]
 
-dfIBNYR_Random <- ClaimsByFirstReport(
-    dfPolicy
-  , Frequency = lstFreq
-  , PaymentSeverity = lstSev
-  , Lags = 1:4)
+tbl_ibnyr_random <- claims_by_first_report(
+    tbl_policy
+  , frequency = lstFreq
+  , payment_severity = lstSev
+  , lags = 1:4)
 
-## ------------------------------------------------------------------------
-dfIBNYR_Random %>% 
-  filter(PolicyholderID == 1) %>% 
-  filter(PolicyEffectiveDate == min(PolicyEffectiveDate)) %>% 
+## -----------------------------------------------------------------------------
+tbl_ibnyr_random %>% 
+  filter(policyholder_id == 1) %>% 
+  filter(policy_effective_date == min(policy_effective_date)) %>% 
   kable()
 
-## ------------------------------------------------------------------------
-fixedLinks <- list(FixedHelper(2)
-                   , FixedHelper(1.5)
-                   , FixedHelper(1.25))
+## -----------------------------------------------------------------------------
+fixedLinks <- list(2, 1.5, 1.25)
 
-## ------------------------------------------------------------------------
-dfClaimsFixed <- ClaimsByLinkRatio(dfIBNYR_Fixed
-                                   , Links = fixedLinks
-                                   , Lags = 1:4)
+## -----------------------------------------------------------------------------
+tbl_claims_fixed <- claims_by_link_ratio(
+  tbl_ibnyr_fixed,
+  links = fixedLinks,
+  lags = 1:4)
 
-## ------------------------------------------------------------------------
-dfClaimsFixed %>% 
-  filter(PolicyholderID == 1) %>% 
-  filter(PolicyEffectiveDate == min(PolicyEffectiveDate)
-         , ClaimID %in% c(1, 41)) %>%
-  arrange(ClaimID, Lag) %>% 
+## -----------------------------------------------------------------------------
+tbl_claims_fixed %>% 
+  filter(policyholder_id == 1) %>% 
+  filter(
+    policy_effective_date == min(policy_effective_date), 
+    claim_id %in% c(1, 41)) %>%
+  arrange(claim_id, lag) %>% 
   kable()
 
-## ------------------------------------------------------------------------
-normalLinks <- list(NormalHelper(2, 1, .7, 4)
-                    , NormalHelper(1.5, .5, .7, 3)
-                    , NormalHelper(1.25, .5, .7, 3))
+## -----------------------------------------------------------------------------
+normalLinks <- list(  
+  Normal(2, 1),
+  Normal(1.5, .5),
+  Normal(1.25, .5))
 
-dfClaimsRandom <- ClaimsByLinkRatio(dfIBNYR_Random
-                                   , Links = normalLinks
-                                   , Lags = 1:4)
+tbl_claims_random <- claims_by_link_ratio(
+  tbl_ibnyr_random, 
+  links = normalLinks, 
+  lags = 1:4)
 
-## ------------------------------------------------------------------------
-dfClaimsRandom %>% 
-  filter(PolicyholderID == 1) %>% 
-  filter(PolicyEffectiveDate == min(PolicyEffectiveDate)) %>%
-  arrange(ClaimID, Lag) %>% 
+## -----------------------------------------------------------------------------
+tbl_claims_random %>% 
+  filter(policyholder_id == 1) %>% 
+  filter(
+    policy_effective_date == min(policy_effective_date), 
+    claim_id %in% c(1, 41)) %>%
+  arrange(claim_id, lag) %>% 
   kable()
 
